@@ -1,53 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Election Stress Score Builder</title>
+
 <link rel="stylesheet" href="style.css">
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 
 <body>
 
 <!-- SLIDE 1 -->
 <div class="slide active">
-    <h1>Election Stress <span class="highlight">Score Builder</span></h1>
-    <p>Real-time Adaptive Crowd Risk Intelligence System</p>
-
-    <div class="card">
-        <p><i>
-        "Predicting and preventing crowd disasters before they happen."
-        </i></p>
-    </div>
-
-    <small>Press → or click</small>
+<h1>Election Stress Score Builder</h1>
+<p>Real-time Crowd Risk Monitoring</p>
+<p><i>Prevent disasters before they happen</i></p>
 </div>
 
 <!-- SLIDE 2 -->
 <div class="slide">
-<h2>Why This Matters</h2>
-
-<div class="stats">
-    <div>
-        <div id="stat1" class="stat">0</div>
-        <p>Heat deaths/year</p>
-    </div>
-
-    <div>
-        <div id="stat2" class="stat">0</div>
-        <p>% crowd risk increase</p>
-    </div>
-
-    <div>
-        <div id="stat3" class="stat">0</div>
-        <p>% preventable</p>
-    </div>
-</div>
-</div>
-
-<!-- SLIDE 3 -->
-<div class="slide">
 <h2>Problem</h2>
-<div class="card">
 <ul>
 <li>High crowd density</li>
 <li>Extreme heat + humidity</li>
@@ -55,59 +30,80 @@
 <li>No predictive system</li>
 </ul>
 </div>
+
+<!-- SLIDE 3 -->
+<div class="slide">
+<h2>Why It Matters</h2>
+<ul>
+<li>1000+ heat-related deaths yearly</li>
+<li>Crowd disasters are preventable</li>
+<li>Delayed response = fatalities</li>
+</ul>
 </div>
 
 <!-- SLIDE 4 -->
 <div class="slide">
 <h2>Solution</h2>
-<div class="card">
 <ul>
 <li>Multi-sensor system</li>
 <li>Stress score (0–1)</li>
-<li>Level-based actions</li>
+<li>Action-based alerts</li>
 </ul>
-</div>
 </div>
 
 <!-- SLIDE 5 -->
 <div class="slide">
-<h2>System Architecture</h2>
-<div class="card">
-<ul>
-<li>ESP32 nodes</li>
-<li>ESP-NOW mesh (primary)</li>
-<li>LoRa fallback (fail-safe)</li>
-<li>OTA adaptive weights</li>
-</ul>
-</div>
+<h2>Formula</h2>
+<p>S = w1·Air + w2·Temp + w3·Humidity + w4·Sound + w5·Consensus</p>
 </div>
 
 <!-- SLIDE 6 -->
 <div class="slide">
-<h2>Live Stress Simulation</h2>
-
-<div class="meter">
-    <div id="meterFill" class="meter-fill"></div>
-</div>
-
-<p>Stress Score: <span id="meterValue">0.00</span></p>
-
-<div id="alertBox" class="alert">🚨 CRITICAL STRESS</div>
+<h2>Architecture</h2>
+<ul>
+<li>ESP32 nodes</li>
+<li>ESP-NOW mesh (primary)</li>
+<li>LoRa fallback (fail-safe)</li>
+<li>OTA weight updates</li>
+</ul>
 </div>
 
 <!-- SLIDE 7 -->
 <div class="slide">
-<h2>Impact</h2>
-<div class="card">
-<ul>
-<li>Prevents stampedes</li>
-<li>Reduces heatstroke deaths</li>
-<li>Enables real-time decisions</li>
-</ul>
-</div>
+<h2>Graph: Stress Over Time</h2>
+<canvas id="chart1"></canvas>
 </div>
 
 <!-- SLIDE 8 -->
+<div class="slide">
+<h2>Graph: Parameter Contribution</h2>
+<canvas id="chart2"></canvas>
+</div>
+
+<!-- SLIDE 9 -->
+<div class="slide">
+<h2>Live Simulation</h2>
+
+<div class="meter">
+<div id="fill" class="fill"></div>
+</div>
+
+<p>Stress: <span id="value">0.00</span></p>
+
+<div id="alert" class="alert">🚨 CRITICAL ALERT</div>
+</div>
+
+<!-- SLIDE 10 -->
+<div class="slide">
+<h2>Impact</h2>
+<ul>
+<li>Prevents stampedes</li>
+<li>Reduces deaths</li>
+<li>Real-time decisions</li>
+</ul>
+</div>
+
+<!-- SLIDE 11 -->
 <div class="slide">
 <h1>Thank You</h1>
 </div>
@@ -119,78 +115,70 @@
 </div>
 
 <script>
-let current = 0;
-const slides = document.querySelectorAll(".slide");
 
 /* SLIDES */
-function showSlide(index) {
-    slides[current].classList.remove("active");
-    current = (index + slides.length) % slides.length;
-    slides[current].classList.add("active");
+let index = 0;
+const slides = document.querySelectorAll(".slide");
 
-    if (slides[current].querySelector(".stat")) startStats();
+function showSlide(i){
+slides[index].classList.remove("active");
+index = (i + slides.length) % slides.length;
+slides[index].classList.add("active");
 }
 
-function nextSlide() { showSlide(current + 1); }
-function prevSlide() { showSlide(current - 1); }
+function nextSlide(){ showSlide(index+1); }
+function prevSlide(){ showSlide(index-1); }
 
-/* NAVIGATION */
-window.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowRight" || e.key === " ") nextSlide();
-    if (e.key === "ArrowLeft") prevSlide();
+/* KEYS */
+document.addEventListener("keydown", e=>{
+if(e.key==="ArrowRight") nextSlide();
+if(e.key==="ArrowLeft") prevSlide();
 });
 
-window.addEventListener("click", nextSlide);
+/* GRAPH 1 */
+new Chart(document.getElementById("chart1"),{
+type:"line",
+data:{
+labels:["1","2","3","4","5","6"],
+datasets:[{
+label:"Stress",
+data:[0.2,0.4,0.5,0.8,0.9,0.6],
+borderColor:"red"
+}]
+}
+});
 
-/* STATS */
-function animate(id, target) {
-    let count = 0;
-    const el = document.getElementById(id);
-    const step = target / 100;
+/* GRAPH 2 */
+new Chart(document.getElementById("chart2"),{
+type:"bar",
+data:{
+labels:["Air","Temp","Humidity","Sound","Consensus"],
+datasets:[{
+label:"Weights",
+data:[0.2,0.3,0.1,0.25,0.15],
+backgroundColor:"orange"
+}]
+}
+});
 
-    const interval = setInterval(() => {
-        count += step;
-        if (count >= target) {
-            count = target;
-            clearInterval(interval);
-        }
-        el.innerText = Math.floor(count);
-    }, 20);
+/* SIMULATION */
+let s = 0;
+
+setInterval(()=>{
+s += Math.random()*0.2;
+if(s>1) s=0;
+
+document.getElementById("fill").style.width = (s*100)+"%";
+document.getElementById("value").innerText = s.toFixed(2);
+
+if(s>0.85){
+let a = document.getElementById("alert");
+a.style.display="block";
+setTimeout(()=>a.style.display="none",1000);
 }
 
-function startStats() {
-    animate("stat1", 1000);
-    animate("stat2", 80);
-    animate("stat3", 70);
-}
+},1500);
 
-/* STRESS METER */
-let stress = 0;
-
-function updateMeter() {
-    const fill = document.getElementById("meterFill");
-    const val = document.getElementById("meterValue");
-
-    stress += Math.random() * 0.2;
-    if (stress > 1) stress = 0;
-
-    fill.style.width = (stress * 100) + "%";
-    val.innerText = stress.toFixed(2);
-
-    if (stress > 0.85) triggerAlert();
-}
-
-setInterval(updateMeter, 1500);
-
-/* ALERT */
-function triggerAlert() {
-    const box = document.getElementById("alertBox");
-    box.style.display = "block";
-
-    setTimeout(() => {
-        box.style.display = "none";
-    }, 1200);
-}
 </script>
 
 </body>
