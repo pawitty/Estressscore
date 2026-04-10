@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Stress Score Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #050505; color: #e5e5e5; overflow: hidden; }
+        h1, h2, h3, h4, .serif { font-family: 'EB Garamond', serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        ::selection { background: #FF4F30; color: white; }
+        ::-webkit-scrollbar { width: 0; }
+
+        .slide { 
+            position: absolute; inset: 0; 
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transform: translateX(60px); 
+            pointer-events: none;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .slide.active { 
+            opacity: 1; transform: translateX(0); 
+            pointer-events: all;
+        }
+        .slide.exit-left {
+            opacity: 0; transform: translateX(-60px);
+        }
+
+        .grid-bg {
+            background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .dot-bg {
+            background-image: radial-gradient(circle at center, rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+
+        .glow-red { box-shadow: 0 0 80px rgba(255,79,48,0.15), 0 0 160px rgba(255,79,48,0.05); }
+        .glow-green { box-shadow: 0 0 60px rgba(34,197,94,0.2); }
+        .glow-amber { box-shadow: 0 0 60px rgba(245,158,11,0.2); }
+        .glow-orange { box-shadow: 0 0 60px rgba(249,115,22,0.2); }
+
+        .formula-box {
+            background: rgba(255,79,48,0.05);
+            border: 1px solid rgba(255,79,48,0.2);
+            border-radius: 12px;
+            padding: 2rem 2.5rem;
+        }
+
+        .stress-bar {
+            height: 8px; border-radius: 4px; 
+            background: linear-gradient(to right, #22c55e 0%, #eab308 33%, #f97316 66%, #ef4444 100%);
+        }
+
+        .level-card {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .level-card:hover {
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .arch-layer {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .arch-layer:hover { border-color: rgba(255,255,255,0.15); }
+
+        .flow-step {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 0.75rem 0;
+            opacity: 0; transform: translateY(15px);
+            transition: all 0.4s ease;
+        }
+        .slide.active .flow-step { opacity: 1; transform: translateY(0); }
+        .slide.active .flow-step:nth-child(1) { transition-delay: 0.1s; }
+        .slide.active .flow-step:nth-child(2) { transition-delay: 0.2s; }
+        .slide.active .flow-step:nth-child(3) { transition-delay: 0.3s; }
+        .slide.active .flow-step:nth-child(4) { transition-delay: 0.4s; }
+        .slide.active .flow-step:nth-child(5) { transition-delay: 0.5s; }
+        .slide.active .flow-step:nth-child(6) { transition-delay: 0.6s; }
+        .slide.active .flow-step:nth-child(7) { transition-delay: 0.7s; }
+        .slide.active .flow-step:nth-child(8) { transition-delay: 0.8s; }
+
+        .fade-in-up {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .slide.active .fade-in-up { opacity: 1; transform: translateY(0); }
+        .slide.active .fade-in-up.d1 { transition-delay: 0.1s; }
+        .slide.active .fade-in-up.d2 { transition-delay: 0.2s; }
+        .slide.active .fade-in-up.d3 { transition-delay: 0.3s; }
+        .slide.active .fade-in-up.d4 { transition-delay: 0.4s; }
+        .slide.active .fade-in-up.d5 { transition-delay: 0.5s; }
+        .slide.active .fade-in-up.d6 { transition-delay: 0.6s; }
+
+        .say-box {
+            background: rgba(255,255,255,0.03);
+            border-left: 3px solid rgba(255,79,48,0.5);
+            padding: 0.75rem 1.25rem;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            font-size: 0.85rem;
+            color: #a3a3a3;
+            max-width: 600px;
+        }
+
+        .progress-bar {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: #FF4F30;
+            transition: width 0.4s ease;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #525252;
+        }
+
+        .heatmap-cell {
+            width: 28px; height: 28px; border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .node-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #FF4F30;
+            animation: pulse-node 2s infinite;
+        }
+        @keyframes pulse-node {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,79,48,0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(255,79,48,0); }
+        }
+
+        .lora-wave {
+            animation: wave-expand 2s infinite;
+        }
+        @keyframes wave-expand {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        .score-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .nav-btn {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            background: rgba(5,5,5,0.8);
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #a3a3a3;
+        }
+        .nav-btn:hover { border-color: rgba(255,255,255,0.3); color: #e5e5e5; }
+
+        .mini-indicator {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .mini-indicator.active { background: #FF4F30; width: 20px; border-radius: 3px; }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .weight-bar-bg {
+            height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+        .weight-bar-fill {
+            height: 100%; border-radius: 3px; transition: width 0.8s ease;
+        }
+
+        @media (max-width: 768px) {
+            .score-display { font-size: 2.5rem; }
+            .formula-box { padding: 1.25rem; }
+            .say-box { display: none; }
+        }
+    </style>
+</head>
+<body class="grid-bg">
+
+    <!-- Progress Bar -->
+    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+
+    <!-- Slide Container -->
+    <div id="slideContainer" class="relative w-full h-screen overflow-hidden">
+
+        <!-- SLIDE 1: Title -->
+        <div class="slide active" data-slide="0">
+            <div class="absolute inset-0 dot-bg opacity-30"></div>
+            <div class="absolute top-1/4 right-1/4 w-96 h-96 bg-[#FF4F30] opacity-[0.03] rounded-full blur-[120px]"></div>
+            <div class="relative z-10 text-center px-6 max-w-4xl">
+                <div class="fade-in-up">
+                    <span class="tag border border-[#FF4F30]/30 text-[#FF4F30] mb-6 inline-block">Real-Time Risk Intelligence</span>
+                </div>
+                <h1 class="fade-in-up d1 text-5xl md:text-7xl font-medium leading-[0.9] tracking-tight text-white mb-6">
+                    Election Stress<br><span class="text-[#FF4F30]">Score Builder</span>
+                </h1>
+                <p class="fade-in-up d2 text-lg md:text-xl text-neutral-400 font-light leading-relaxed max-w-2xl mx-auto mb-8">
+                    Real-time Adaptive Crowd Risk Intelligence System
+                </p>
+                <div class="fade-in-up d3 say-box mx-auto text-left">
+                    "Elections are high-risk environments. Our system predicts and prevents crowd disasters before they happen."
+                </div>
+                <div class="fade-in-up d4 mt-10 flex items-center justify-center gap-2 text-neutral-600 text-sm">
+                    <i data-lucide="arrow-down" class="w-4 h-4 animate-bounce"></i>
+                    <span>Press → or click to navigate</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: Problem Statement -->
+        <div class="slide" data-slide="1">
+            <div class="absolute top-1/3 left-0 w-72 h-72 bg-red-900/10 rounded-full blur-[100px]"></div>
+            <div class="relative z-10 px-6 max-w-5xl w-full">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <span class="fade-in-up tag bg-red-500/10 text-red-400 border border-red-500/20 mb-4 inline-block">Problem</span>
+                        <h2 class="fade-in-up d1 text-3xl md:text-5xl font-medium tracking-tight text-white mb-6">
+                            High crowd density<br>+ <span class="text-red-400">extreme heat</span>
+                        </h2>
+                        <div class="fade-in-up d2 say-box">
+                            "The problem is not lack of monitoring — it's lack of actionable intelligence."
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="fade-in-up d1 level-card bg-red-500/[0.03] border-red-500/10">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
+                                    <i data-lucide="zap" class="w-4 h-4 text-red-400"></i>
+                                </div>
+                                <span class="text-white font-medium">Stampedes</span>
+                            </div>
+                        </div>
+                        <div class="fade-in-up d2 level-card bg-red-500/[0.03] border-red-500/10">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
+                                    <i data-lucide="thermometer" class="w-4 h-4 text-red-400"></i>
+                                </div>
+                                <span class="text-white font-medium">Heat Strokes</span>
+                            </div>
+                        </div>
+                        <div class="fade-in-up d3 level-card bg-red-500/[0.03] border-red-500/10">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
+                                    <i data-lucide="siren" class="w-4 h-4 text-red-400"></i>
+                                </div>
+                                <span class="text-white font-medium">Panic Situations</span>
+                            </div>
+                        </div>
+                        <div class="fade-in-up d4 mt-6 pt-4 border-t border-white/5 space-y-3">
+                            <div class="flex items-center gap-3 text-neutral-500 text-sm">
+                                <i data-lucide="video" class="w-4 h-4"></i>
+                                <span>CCTV → reactive, expensive</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-neutral-500 text-sm">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                                <span>Manual control → slow, unreliable</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: Gap -->
+        <div class="slide" data-slide="2">
+            <div class="relative z-10 px-6 max-w-4xl text-center">
+                <span class="fade-in-up tag bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-6 inline-block">Gap Analysis</span>
+                <h2 class="fade-in-up d1 text-3xl md:text-5xl font-medium tracking-tight text-white mb-12">
+                    What's <span class="text-amber-400">Missing</span>?
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    <div class="fade-in-up d2 level-card">
+                        <div class="text-3xl mb-3">📊</div>
+                        <h3 class="text-white font-medium mb-2">No Quantifiable Metric</h3>
+                        <p class="text-neutral-500 text-sm">No single number that tells you how stressed a crowd is</p>
+                    </div>
+                    <div class="fade-in-up d3 level-card">
+                        <div class="text-3xl mb-3">⏱️</div>
+                        <h3 class="text-white font-medium mb-2">No Real-Time Prediction</h3>
+                        <p class="text-neutral-500 text-sm">Systems report after the fact, not before</p>
+                    </div>
+                    <div class="fade-in-up d4 level-card">
+                        <div class="text-3xl mb-3">🎯</div>
+                        <h3 class="text-white font-medium mb-2">No Prioritized Response</h3>
+                        <p class="text-neutral-500 text-sm">Every alert treated equally — no severity grading</p>
+                    </div>
+                </div>
+                <div class="fade-in-up d5 say-box mx-auto text-left">
+                    "Right now, decisions are based on guesswork — not data."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: Solution -->
+        <div class="slide" data-slide="3">
+            <div class="absolute inset-0 dot-bg opacity-20"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#FF4F30] opacity-[0.03] rounded-full blur-[150px]"></div>
+            <div class="relative z-10 px-6 max-w-4xl text-center">
+                <span class="fade-in-up tag bg-[#FF4F30]/10 text-[#FF4F30] border border-[#FF4F30]/20 mb-6 inline-block">Solution</span>
+                <h2 class="fade-in-up d1 text-4xl md:text-6xl font-medium tracking-tight text-white mb-4">
+                    Election Stress<br><span class="text-[#FF4F30]">Score Builder</span>
+                </h2>
+                <p class="fade-in-up d2 text-neutral-400 text-lg mb-12">Multi-sensor system that converts crowd conditions into one actionable number</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    <div class="fade-in-up d3 arch-layer bg-white/[0.02]">
+                        <i data-lucide="radio" class="w-6 h-6 text-[#FF4F30] mb-3 mx-auto block"></i>
+                        <h3 class="text-white font-medium text-sm">Multi-Sensor</h3>
+                        <p class="text-neutral-500 text-xs mt-1">5 environmental parameters</p>
+                    </div>
+                    <div class="fade-in-up d4 arch-layer bg-white/[0.02]">
+                        <i data-lucide="gauge" class="w-6 h-6 text-[#FF4F30] mb-3 mx-auto block"></i>
+                        <h3 class="text-white font-medium text-sm">Stress Score</h3>
+                        <p class="text-neutral-500 text-xs mt-1">Real-time 0–1 computation</p>
+                    </div>
+                    <div class="fade-in-up d5 arch-layer bg-white/[0.02]">
+                        <i data-lucide="shield-alert" class="w-6 h-6 text-[#FF4F30] mb-3 mx-auto block"></i>
+                        <h3 class="text-white font-medium text-sm">Level-Based Action</h3>
+                        <p class="text-neutral-500 text-xs mt-1">Automatic intervention trigger</p>
+                    </div>
+                </div>
+                <div class="fade-in-up d6 say-box mx-auto text-left">
+                    "We convert crowd conditions into a single actionable number."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: Core Formula -->
+        <div class="slide" data-slide="4">
+            <div class="relative z-10 px-6 max-w-4xl w-full">
+                <div class="text-center mb-10">
+                    <span class="fade-in-up tag bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-4 inline-block">Core Formula</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        Weighted Stress Computation
+                    </h2>
+                </div>
+                <div class="fade-in-up d2 formula-box glow-red mb-8">
+                    <div class="text-center">
+                        <div class="mono text-xl md:text-2xl text-white mb-4">
+                            S = <span class="text-[#FF4F30]">w₁</span>·AQ + <span class="text-amber-400">w₂</span>·T + <span class="text-green-400">w₃</span>·H + <span class="text-purple-400">w₄</span>·SND + <span class="text-blue-400">w₅</span>·C
+                        </div>
+                        <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-neutral-500 mono">
+                            <span><span class="text-[#FF4F30]">w₁</span> Air Quality</span>
+                            <span class="text-white/10">|</span>
+                            <span><span class="text-amber-400">w₂</span> Temperature</span>
+                            <span class="text-white/10">|</span>
+                            <span><span class="text-green-400">w₃</span> Humidity</span>
+                            <span class="text-white/10">|</span>
+                            <span><span class="text-purple-400">w₄</span> Sound</span>
+                            <span class="text-white/10">|</span>
+                            <span><span class="text-blue-400">w₅</span> Consensus</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade-in-up d3 say-box mx-auto text-left">
+                    "Each parameter contributes differently — we weight them based on impact."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: Weight Logic -->
+        <div class="slide" data-slide="5">
+            <div class="relative z-10 px-6 max-w-4xl w-full">
+                <div class="text-center mb-10">
+                    <span class="fade-in-up tag bg-purple-500/10 text-purple-400 border border-purple-500/20 mb-4 inline-block">Weight Logic</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        Not All Signals Are Equal
+                    </h2>
+                </div>
+                <div class="space-y-5 mb-8">
+                    <div class="fade-in-up d1 flex items-center gap-4">
+                        <div class="w-16 text-right mono text-sm text-purple-400">w₄ = 0.35</div>
+                        <div class="flex-1 weight-bar-bg"><div class="weight-bar-fill bg-purple-500" style="width: 35%"></div></div>
+                        <div class="w-40">
+                            <div class="text-white text-sm font-medium">Sound</div>
+                            <div class="text-neutral-500 text-xs">Fastest stress signal</div>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d2 flex items-center gap-4">
+                        <div class="w-16 text-right mono text-sm text-amber-400">w₂ = 0.25</div>
+                        <div class="flex-1 weight-bar-bg"><div class="weight-bar-fill bg-amber-500" style="width: 25%"></div></div>
+                        <div class="w-40">
+                            <div class="text-white text-sm font-medium">Temperature</div>
+                            <div class="text-neutral-500 text-xs">Heat danger</div>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d3 flex items-center gap-4">
+                        <div class="w-16 text-right mono text-sm text-[#FF4F30]">w₁ = 0.20</div>
+                        <div class="flex-1 weight-bar-bg"><div class="weight-bar-fill bg-[#FF4F30]" style="width: 20%"></div></div>
+                        <div class="w-40">
+                            <div class="text-white text-sm font-medium">Air Quality</div>
+                            <div class="text-neutral-500 text-xs">Long-term stress</div>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d4 flex items-center gap-4">
+                        <div class="w-16 text-right mono text-sm text-green-400">w₃ = 0.10</div>
+                        <div class="flex-1 weight-bar-bg"><div class="weight-bar-fill bg-green-500" style="width: 10%"></div></div>
+                        <div class="w-40">
+                            <div class="text-white text-sm font-medium">Humidity</div>
+                            <div class="text-neutral-500 text-xs">Compounding factor</div>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d5 flex items-center gap-4">
+                        <div class="w-16 text-right mono text-sm text-blue-400">w₅ = 0.10</div>
+                        <div class="flex-1 weight-bar-bg"><div class="weight-bar-fill bg-blue-500" style="width: 10%"></div></div>
+                        <div class="w-40">
+                            <div class="text-white text-sm font-medium">Consensus</div>
+                            <div class="text-neutral-500 text-xs">Reduces false alarms</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade-in-up d6 say-box mx-auto text-left">
+                    "Not all signals are equal — this is where intelligence comes in."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 7: Signal Processing -->
+        <div class="slide" data-slide="6">
+            <div class="relative z-10 px-6 max-w-4xl w-full">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <span class="fade-in-up tag bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 mb-4 inline-block">Signal Processing</span>
+                        <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white mb-4">
+                            Exponential Moving<br><span class="text-cyan-400">Average</span>
+                        </h2>
+                        <p class="fade-in-up d2 text-neutral-400 text-sm leading-relaxed mb-6">
+                            Raw sensor data is inherently noisy. A single loud noise or temperature spike shouldn't trigger a crisis response.
+                        </p>
+                        <div class="fade-in-up d3 formula-box !border-cyan-500/20 !bg-cyan-500/[0.03]">
+                            <div class="mono text-lg text-white text-center">
+                                EMA<sub>t</sub> = α·x<sub>t</sub> + (1-α)·EMA<sub>t-1</sub>
+                            </div>
+                        </div>
+                        <div class="fade-in-up d4 say-box mt-6">
+                            "We smooth spikes so one loud noise doesn't trigger a false emergency."
+                        </div>
+                    </div>
+                    <div class="fade-in-up d2 space-y-6">
+                        <div class="level-card bg-cyan-500/[0.03]">
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="shield" class="w-5 h-5 text-cyan-400 mt-0.5"></i>
+                                <div>
+                                    <h3 class="text-white font-medium text-sm">Stability</h3>
+                                    <p class="text-neutral-500 text-xs mt-1">Filters transient noise and sensor glitches</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="level-card bg-cyan-500/[0.03]">
+                            <div class="flex items-start gap-3">
+                                <i data-lucide="zap" class="w-5 h-5 text-cyan-400 mt-0.5"></i>
+                                <div>
+                                    <h3 class="text-white font-medium text-sm">Responsiveness</h3>
+                                    <p class="text-neutral-500 text-xs mt-1">Still catches genuine escalating trends fast</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Mini EMA visualization -->
+                        <div class="level-card bg-white/[0.02]">
+                            <p class="text-neutral-500 text-xs mb-3 mono">RAW vs EMA</p>
+                            <svg viewBox="0 0 300 80" class="w-full">
+                                <polyline fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"
+                                    points="0,40 20,10 40,60 60,20 80,55 100,15 120,50 140,25 160,65 180,10 200,55 220,20 240,60 260,15 280,50 300,30"/>
+                                <polyline fill="none" stroke="#22d3ee" stroke-width="2"
+                                    points="0,40 20,35 40,38 60,34 80,37 100,33 120,35 140,33 160,37 180,32 200,34 220,32 240,35 260,31 280,33 300,32"/>
+                            </svg>
+                            <div class="flex justify-between text-xs text-neutral-600 mt-1">
+                                <span>Raw (noisy)</span>
+                                <span class="text-cyan-400">EMA (smooth)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 8: Stress Levels -->
+        <div class="slide" data-slide="7">
+            <div class="relative z-10 px-6 max-w-5xl w-full">
+                <div class="text-center mb-10">
+                    <span class="fade-in-up tag bg-green-500/10 text-green-400 border border-green-500/20 mb-4 inline-block">Response Matrix</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        Stress Levels → Actions
+                    </h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div class="fade-in-up d1 level-card glow-green bg-green-500/[0.03] border-green-500/20">
+                        <div class="w-4 h-4 rounded-full bg-green-500 mb-3"></div>
+                        <div class="mono text-2xl text-green-400 mb-1">0.0–0.3</div>
+                        <h3 class="text-white font-medium mb-1">Normal</h3>
+                        <p class="text-neutral-500 text-xs">No action required</p>
+                    </div>
+                    <div class="fade-in-up d2 level-card glow-amber bg-amber-500/[0.03] border-amber-500/20">
+                        <div class="w-4 h-4 rounded-full bg-amber-500 mb-3"></div>
+                        <div class="mono text-2xl text-amber-400 mb-1">0.3–0.6</div>
+                        <h3 class="text-white font-medium mb-1">Watch</h3>
+                        <p class="text-neutral-500 text-xs">Increased monitoring</p>
+                    </div>
+                    <div class="fade-in-up d3 level-card glow-orange bg-orange-500/[0.03] border-orange-500/20">
+                        <div class="w-4 h-4 rounded-full bg-orange-500 mb-3"></div>
+                        <div class="mono text-2xl text-orange-400 mb-1">0.6–0.8</div>
+                        <h3 class="text-white font-medium mb-1">High</h3>
+                        <p class="text-neutral-500 text-xs">Deploy resources</p>
+                    </div>
+                    <div class="fade-in-up d4 level-card bg-red-500/[0.03] border-red-500/20" style="box-shadow: 0 0 60px rgba(239,68,68,0.2)">
+                        <div class="w-4 h-4 rounded-full bg-red-500 mb-3 animate-pulse"></div>
+                        <div class="mono text-2xl text-red-400 mb-1">0.8–1.0</div>
+                        <h3 class="text-white font-medium mb-1">Critical</h3>
+                        <p class="text-neutral-500 text-xs">Immediate intervention</p>
+                    </div>
+                </div>
+                <div class="fade-in-up d5 mb-6">
+                    <div class="stress-bar"></div>
+                </div>
+                <div class="fade-in-up d6 say-box mx-auto text-left">
+                    "Instead of random alarms, we map stress to clear actions."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 9: Hardware -->
+        <div class="slide" data-slide="8">
+            <div class="relative z-10 px-6 max-w-5xl w-full">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <span class="fade-in-up tag bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4 inline-block">Hardware</span>
+                        <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white mb-6">
+                            Prototype Node
+                        </h2>
+                        <div class="fade-in-up d2 level-card bg-white/[0.02] mb-4 border-emerald-500/10">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i data-lucide="cpu" class="w-5 h-5 text-emerald-400"></i>
+                                <span class="text-white font-medium">ESP32</span>
+                                <span class="tag bg-emerald-500/10 text-emerald-400 text-[0.6rem]">Core</span>
+                            </div>
+                            <p class="text-neutral-500 text-xs">Processing unit — computes stress score locally</p>
+                        </div>
+                        <div class="fade-in-up d3 space-y-2 mb-6">
+                            <div class="flex items-center gap-3 text-sm text-neutral-300">
+                                <i data-lucide="thermometer" class="w-4 h-4 text-neutral-500"></i>
+                                <span>Temperature Sensor</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm text-neutral-300">
+                                <i data-lucide="droplets" class="w-4 h-4 text-neutral-500"></i>
+                                <span>Humidity Sensor</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm text-neutral-300">
+                                <i data-lucide="mic" class="w-4 h-4 text-neutral-500"></i>
+                                <span>Microphone</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm text-neutral-300">
+                                <i data-lucide="wind" class="w-4 h-4 text-neutral-500"></i>
+                                <span>Air Quality Sensor</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm text-neutral-300">
+                                <i data-lucide="battery-charging" class="w-4 h-4 text-neutral-500"></i>
+                                <span>Power + Enclosure</span>
+                            </div>
+                        </div>
+                        <div class="fade-in-up d4 say-box">
+                            "Each node independently measures and computes stress."
+                        </div>
+                    </div>
+                    <div class="fade-in-up d2 flex items-center justify-center">
+                        <!-- Hardware diagram -->
+                        <div class="relative w-64 h-80">
+                            <div class="absolute inset-0 rounded-2xl border border-white/10 bg-white/[0.02] flex flex-col items-center justify-center gap-4 p-6">
+                                <div class="w-16 h-16 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                    <i data-lucide="cpu" class="w-8 h-8 text-emerald-400"></i>
+                                </div>
+                                <div class="text-xs mono text-emerald-400">ESP32</div>
+                                <div class="w-full h-px bg-white/5"></div>
+                                <div class="grid grid-cols-2 gap-3 w-full">
+                                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/[0.02]">
+                                        <i data-lucide="thermometer" class="w-4 h-4 text-amber-400"></i>
+                                        <span class="text-[0.6rem] text-neutral-500">TEMP</span>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/[0.02]">
+                                        <i data-lucide="droplets" class="w-4 h-4 text-blue-400"></i>
+                                        <span class="text-[0.6rem] text-neutral-500">HUM</span>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/[0.02]">
+                                        <i data-lucide="mic" class="w-4 h-4 text-purple-400"></i>
+                                        <span class="text-[0.6rem] text-neutral-500">MIC</span>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/[0.02]">
+                                        <i data-lucide="wind" class="w-4 h-4 text-[#FF4F30]"></i>
+                                        <span class="text-[0.6rem] text-neutral-500">AQ</span>
+                                    </div>
+                                </div>
+                                <div class="w-full h-px bg-white/5"></div>
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="battery-charging" class="w-3 h-3 text-green-400"></i>
+                                    <span class="text-[0.6rem] text-neutral-500 mono">LI-ION 3.7V</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 10: Architecture -->
+        <div class="slide" data-slide="9">
+            <div class="relative z-10 px-6 max-w-5xl w-full">
+                <div class="text-center mb-10">
+                    <span class="fade-in-up tag bg-violet-500/10 text-violet-400 border border-violet-500/20 mb-4 inline-block">Architecture</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        Three-Layer System
+                    </h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="fade-in-up d1 arch-layer bg-violet-500/[0.03] border-violet-500/10 text-center">
+                        <div class="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="radio" class="w-6 h-6 text-violet-400"></i>
+                        </div>
+                        <h3 class="text-white font-medium mb-1">Edge Layer</h3>
+                        <p class="text-neutral-500 text-xs mb-3">Sensing + Computation</p>
+                        <div class="space-y-1 text-[0.65rem] text-neutral-600 mono">
+                            <div>ESP32 nodes</div>
+                            <div>Local EMA</div>
+                            <div>Stress calculation</div>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d2 arch-layer bg-blue-500/[0.03] border-blue-500/10 text-center">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="network" class="w-6 h-6 text-blue-400"></i>
+                        </div>
+                        <h3 class="text-white font-medium mb-1">Network Layer</h3>
+                        <p class="text-neutral-500 text-xs mb-3">Mesh + LoRa</p>
+                        <div class="space-y-1 text-[0.65rem] text-neutral-600 mono">
+                            <div>ESP-NOW mesh</div>
+                            <div>Consensus protocol</div>
+                            <div>LoRa fail-safe</div>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d3 arch-layer bg-cyan-500/[0.03] border-cyan-500/10 text-center">
+                        <div class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="cloud" class="w-6 h-6 text-cyan-400"></i>
+                        </div>
+                        <h3 class="text-white font-medium mb-1">Cloud Layer</h3>
+                        <p class="text-neutral-500 text-xs mb-3">Dashboard + OTA</p>
+                        <div class="space-y-1 text-[0.65rem] text-neutral-600 mono">
+                            <div>Real-time dashboard</div>
+                            <div>Historical analytics</div>
+                            <div>OTA weight updates</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade-in-up d4 say-box mx-auto text-left">
+                    "Intelligence is distributed — not centralized."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 11: Mesh Networking -->
+        <div class="slide" data-slide="10">
+            <div class="relative z-10 px-6 max-w-5xl w-full">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <span class="fade-in-up tag bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-4 inline-block">Networking</span>
+                        <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white mb-4">
+                            Mesh <span class="text-blue-400">Networking</span>
+                        </h2>
+                        <p class="fade-in-up d2 text-neutral-400 text-sm leading-relaxed mb-6">
+                            Nodes communicate directly with each other, forming a self-healing network that eliminates single points of failure.
+                        </p>
+                        <div class="fade-in-up d3 space-y-3 mb-6">
+                            <div class="flex items-start gap-3">
+                                <div class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 shrink-0"></div>
+                                <p class="text-neutral-300 text-sm">Node-to-node communication</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 shrink-0"></div>
+                                <p class="text-neutral-300 text-sm">No single point of failure</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 shrink-0"></div>
+                                <p class="text-neutral-300 text-sm">Improves accuracy via consensus</p>
+                            </div>
+                        </div>
+                        <div class="fade-in-up d4 say-box">
+                            "Nodes validate each other — reducing false positives."
+                        </div>
+                    </div>
+                    <div class="fade-in-up d2 flex items-center justify-center">
+                        <!-- Mesh visualization -->
+                        <div class="relative w-72 h-72">
+                            <svg viewBox="0 0 280 280" class="w-full h-full">
+                                <!-- Mesh lines -->
+                                <line x1="140" y1="50" x2="60" y2="130" stroke="rgba(96,165,250,0.2)" stroke-width="1.5"/>
+                                <line x1="140" y1="50" x2="220" y2="130" stroke="rgba(96,165,250,0.2)" stroke-width="1.5"/>
+                                <line x1="60" y1="130" x2="220" y2="130" stroke="rgba(96,165,250,0.2)" stroke-width="1.5"/>
+                                <line x1="60" y1="130" x2="100" y2="230" stroke="rgba(96,165,250,0.2)" stroke-width="1.5"/>
+                                <line x1="220" y1="130" x2="180" y2="230" stroke="rgba(96,165,250,0.2)" stroke-width="1.5"/>
+                                <line x1="100" y1="230" x2="180" y2="230" stroke="rgba(96,165,250,0.2)" stroke-width="1.5"/>
+                                <line x1="140" y1="50" x2="140" y2="150" stroke="rgba(96,165,250,0.1)" stroke-width="1" stroke-dasharray="4"/>
+                                <line x1="60" y1="130" x2="180" y2="230" stroke="rgba(96,165,250,0.1)" stroke-width="1" stroke-dasharray="4"/>
+                                <line x1="220" y1="130" x2="100" y2="230" stroke="rgba(96,165,250,0.1)" stroke-width="1" stroke-dasharray="4"/>
+                                <!-- Nodes -->
+                                <circle cx="140" cy="50" r="8" fill="#FF4F30" opacity="0.9"/>
+                                <circle cx="60" cy="130" r="8" fill="#FF4F30" opacity="0.9"/>
+                                <circle cx="220" cy="130" r="8" fill="#FF4F30" opacity="0.9"/>
+                                <circle cx="100" cy="230" r="8" fill="#FF4F30" opacity="0.9"/>
+                                <circle cx="180" cy="230" r="8" fill="#FF4F30" opacity="0.9"/>
+                                <circle cx="140" cy="150" r="5" fill="#FF4F30" opacity="0.4"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 12: LoRa -->
+        <div class="slide" data-slide="11">
+            <div class="relative z-10 px-6 max-w-5xl w-full">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div class="fade-in-up d1 flex items-center justify-center order-2 md:order-1">
+                        <!-- LoRa wave visualization -->
+                        <div class="relative w-64 h-64 flex items-center justify-center">
+                            <div class="absolute w-16 h-16 rounded-full bg-[#FF4F30]/20 flex items-center justify-center">
+                                <i data-lucide="radio-tower" class="w-8 h-8 text-[#FF4F30]"></i>
+                            </div>
+                            <div class="absolute w-32 h-32 rounded-full border border-[#FF4F30]/20 lora-wave"></div>
+                            <div class="absolute w-48 h-48 rounded-full border border-[#FF4F30]/10 lora-wave" style="animation-delay: 0.5s"></div>
+                            <div class="absolute w-64 h-64 rounded-full border border-[#FF4F30]/5 lora-wave" style="animation-delay: 1s"></div>
+                        </div>
+                    </div>
+                    <div class="order-1 md:order-2">
+                        <span class="fade-in-up tag bg-[#FF4F30]/10 text-[#FF4F30] border border-[#FF4F30]/20 mb-4 inline-block">Fail-Safe</span>
+                        <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white mb-4">
+                            LoRa <span class="text-[#FF4F30]">Backup Channel</span>
+                        </h2>
+                        <p class="fade-in-up d2 text-neutral-400 text-sm leading-relaxed mb-6">
+                            When primary networks fail during a crisis, LoRa ensures critical alerts still reach authorities.
+                        </p>
+                        <div class="fade-in-up d3 space-y-3 mb-6">
+                            <div class="flex items-start gap-3">
+                                <div class="w-1.5 h-1.5 rounded-full bg-[#FF4F30] mt-2 shrink-0"></div>
+                                <p class="text-neutral-300 text-sm">Long-range communication (up to 10km)</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-1.5 h-1.5 rounded-full bg-[#FF4F30] mt-2 shrink-0"></div>
+                                <p class="text-neutral-300 text-sm">Works during complete network failure</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="w-1.5 h-1.5 rounded-full bg-[#FF4F30] mt-2 shrink-0"></div>
+                                <p class="text-neutral-300 text-sm">Sends critical alerts with minimal data</p>
+                            </div>
+                        </div>
+                        <div class="fade-in-up d4 say-box">
+                            "Even if everything fails — alerts still go through."
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 13: OTA -->
+        <div class="slide" data-slide="12">
+            <div class="relative z-10 px-6 max-w-4xl w-full">
+                <div class="text-center mb-10">
+                    <span class="fade-in-up tag bg-teal-500/10 text-teal-400 border border-teal-500/20 mb-4 inline-block">Adaptive Intelligence</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        OTA Weight Adaptation
+                    </h2>
+                </div>
+                <div class="fade-in-up d2 grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="level-card bg-teal-500/[0.03] border-teal-500/10 text-center">
+                        <i data-lucide="cloud-sun" class="w-8 h-8 text-teal-400 mx-auto mb-3"></i>
+                        <h3 class="text-white font-medium text-sm mb-1">Weather</h3>
+                        <p class="text-neutral-500 text-xs">Increase temperature weight on hot days</p>
+                    </div>
+                    <div class="level-card bg-teal-500/[0.03] border-teal-500/10 text-center">
+                        <i data-lucide="users" class="w-8 h-8 text-teal-400 mx-auto mb-3"></i>
+                        <h3 class="text-white font-medium text-sm mb-1">Crowd Density</h3>
+                        <p class="text-neutral-500 text-xs">Boost sound & consensus in dense areas</p>
+                    </div>
+                    <div class="level-card bg-teal-500/[0.03] border-teal-500/10 text-center">
+                        <i data-lucide="clock" class="w-8 h-8 text-teal-400 mx-auto mb-3"></i>
+                        <h3 class="text-white font-medium text-sm mb-1">Time of Day</h3>
+                        <p class="text-neutral-500 text-xs">Adjust thresholds for rally vs. idle hours</p>
+                    </div>
+                </div>
+                <div class="fade-in-up d3 level-card bg-white/[0.02] mb-8">
+                    <div class="flex items-center justify-between text-xs mono text-neutral-500 mb-2">
+                        <span>Cloud → OTA → Edge Nodes</span>
+                        <span class="text-teal-400">Wireless Update</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 h-2 rounded bg-teal-500/20">
+                            <div class="h-2 rounded bg-teal-400 w-full animate-pulse"></div>
+                        </div>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-teal-400"></i>
+                        <div class="flex-1 h-2 rounded bg-teal-500/20">
+                            <div class="h-2 rounded bg-teal-400 w-3/4 animate-pulse" style="animation-delay:0.3s"></div>
+                        </div>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-teal-400"></i>
+                        <div class="flex-1 h-2 rounded bg-teal-500/20">
+                            <div class="h-2 rounded bg-teal-400 w-1/2 animate-pulse" style="animation-delay:0.6s"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade-in-up d4 say-box mx-auto text-left">
+                    "The system adapts to the environment — not the other way around."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 14: End-to-End Flow -->
+        <div class="slide" data-slide="13">
+            <div class="relative z-10 px-6 max-w-3xl w-full">
+                <div class="text-center mb-10">
+                    <span class="fade-in-up tag bg-white/5 text-neutral-400 border border-white/10 mb-4 inline-block">Full Pipeline</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        End-to-End Flow
+                    </h2>
+                </div>
+                <div class="space-y-1">
+                    <div class="flow-step">
+                        <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 mono text-xs text-neutral-400">1</div>
+                        <span class="text-neutral-200 text-sm">Sensors capture environmental data</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 mono text-xs text-neutral-400">2</div>
+                        <span class="text-neutral-200 text-sm">Node computes raw stress score</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 mono text-xs text-neutral-400">3</div>
+                        <span class="text-neutral-200 text-sm">Mesh network validates via consensus</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 mono text-xs text-neutral-400">4</div>
+                        <span class="text-neutral-200 text-sm">EMA smoothing filters noise</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 mono text-xs text-neutral-400">5</div>
+                        <span class="text-neutral-200 text-sm">Threshold triggers level-based action</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 mono text-xs text-neutral-400">6</div>
+                        <span class="text-neutral-200 text-sm">LoRa sends critical alerts</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 mono text-xs text-neutral-400">7</div>
+                        <span class="text-neutral-200 text-sm">Dashboard updates in real-time</span>
+                    </div>
+                    <div class="flow-step">
+                        <div class="w-8 h-8 rounded-full bg-[#FF4F30]/20 flex items-center justify-center shrink-0 mono text-xs text-[#FF4F30]">8</div>
+                        <span class="text-white text-sm font-medium">OTA adjusts system weights</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 15: Dashboard -->
+        <div class="slide" data-slide="14">
+            <div class="relative z-10 px-6 max-w-5xl w-full">
+                <div class="text-center mb-8">
+                    <span class="fade-in-up tag bg-sky-500/10 text-sky-400 border border-sky-500/20 mb-4 inline-block">Dashboard</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        Live Risk Visualization
+                    </h2>
+                </div>
+                <div class="fade-in-up d2 level-card bg-white/[0.02] p-4 md:p-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Live Score -->
+                        <div class="text-center">
+                            <p class="text-neutral-500 text-xs mono mb-2">LIVE STRESS SCORE</p>
+                            <div class="score-display" id="liveScore" style="color: #22c55e;">0.42</div>
+                            <div class="mt-3">
+                                <div class="stress-bar"></div>
+                                <div class="flex justify-between text-[0.6rem] text-neutral-600 mt-1 mono">
+                                    <span>0.0</span>
+                                    <span>0.5</span>
+                                    <span>1.0</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Heatmap -->
+                        <div>
+                            <p class="text-neutral-500 text-xs mono mb-2">CROWD RISK HEATMAP</p>
+                            <div class="grid grid-cols-8 gap-1" id="heatmap"></div>
+                            <div class="flex justify-between text-[0.6rem] text-neutral-600 mt-2">
+                                <span>Low</span>
+                                <span>High</span>
+                            </div>
+                        </div>
+                        <!-- Node Status -->
+                        <div>
+                            <p class="text-neutral-500 text-xs mono mb-2">NODE STATUS</p>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-neutral-400">Node A-01</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-green-400 mono">0.31</span>
+                                        <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-neutral-400">Node A-02</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-amber-400 mono">0.55</span>
+                                        <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-neutral-400">Node B-01</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-orange-400 mono">0.72</span>
+                                        <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-neutral-400">Node B-02</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-red-400 mono">0.89</span>
+                                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade-in-up d3 say-box mx-auto text-left">
+                    "Anyone can see where risk is building — in real time."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 16: Resource Allocation -->
+        <div class="slide" data-slide="15">
+            <div class="relative z-10 px-6 max-w-4xl w-full">
+                <div class="text-center mb-10">
+                    <span class="fade-in-up tag bg-orange-500/10 text-orange-400 border border-orange-500/20 mb-4 inline-block">Resource Mapping</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        Smart Resource Allocation
+                    </h2>
+                </div>
+                <div class="space-y-4 mb-8">
+                    <div class="fade-in-up d1 flex items-start gap-4 p-4 rounded-xl bg-amber-500/[0.03] border border-amber-500/10">
+                        <div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-amber-400 font-medium text-sm">Amber Level</span>
+                                <span class="mono text-xs text-neutral-600">0.3–0.6</span>
+                            </div>
+                            <p class="text-neutral-400 text-sm">Increase monitoring frequency, alert on-site supervisors, prepare medical standby</p>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d2 flex items-start gap-4 p-4 rounded-xl bg-orange-500/[0.03] border border-orange-500/10">
+                        <div class="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <div class="w-3 h-3 rounded-full bg-orange-500"></div>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-orange-400 font-medium text-sm">Orange Level</span>
+                                <span class="mono text-xs text-neutral-600">0.6–0.8</span>
+                            </div>
+                            <p class="text-neutral-400 text-sm">Deploy medical teams, distribute water stations, activate crowd flow management</p>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d3 flex items-start gap-4 p-4 rounded-xl bg-red-500/[0.03] border border-red-500/10">
+                        <div class="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-red-400 font-medium text-sm">Red Level</span>
+                                <span class="mono text-xs text-neutral-600">0.8–1.0</span>
+                            </div>
+                            <p class="text-neutral-400 text-sm">Emergency control activated, evacuation protocol, full medical deployment, LoRa alerts broadcast</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade-in-up d4 say-box mx-auto text-left">
+                    "Resources are deployed before disaster — not after."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 17: Failure Handling -->
+        <div class="slide" data-slide="16">
+            <div class="relative z-10 px-6 max-w-4xl w-full">
+                <div class="text-center mb-10">
+                    <span class="fade-in-up tag bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4 inline-block">Resilience</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        Built to Fail <span class="text-emerald-400">Safely</span>
+                    </h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <div class="fade-in-up d1 level-card bg-white/[0.02]">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i data-lucide="wifi-off" class="w-5 h-5 text-red-400"></i>
+                            <span class="text-white font-medium text-sm">Internet Down</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="arrow-right" class="w-3 h-3 text-emerald-400"></i>
+                            <span class="text-neutral-400 text-xs">LoRa channel automatically active</span>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d2 level-card bg-white/[0.02]">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i data-lucide="unplug" class="w-5 h-5 text-red-400"></i>
+                            <span class="text-white font-medium text-sm">Node Failure</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="arrow-right" class="w-3 h-3 text-emerald-400"></i>
+                            <span class="text-neutral-400 text-xs">Mesh reroutes around dead node</span>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d3 level-card bg-white/[0.02]">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i data-lucide="volume-x" class="w-5 h-5 text-red-400"></i>
+                            <span class="text-white font-medium text-sm">Noise Spikes</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="arrow-right" class="w-3 h-3 text-emerald-400"></i>
+                            <span class="text-neutral-400 text-xs">EMA smoothing + consensus validation</span>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d4 level-card bg-white/[0.02]">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i data-lucide="settings" class="w-5 h-5 text-red-400"></i>
+                            <span class="text-white font-medium text-sm">Wrong Config</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="arrow-right" class="w-3 h-3 text-emerald-400"></i>
+                            <span class="text-neutral-400 text-xs">OTA pushes corrected weights instantly</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade-in-up d5 say-box mx-auto text-left">
+                    "The system is built to fail safely — not fail silently."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 18: Use Cases -->
+        <div class="slide" data-slide="17">
+            <div class="relative z-10 px-6 max-w-5xl w-full">
+                <div class="text-center mb-10">
+                    <span class="fade-in-up tag bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-4 inline-block">Applications</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        Beyond Elections
+                    </h2>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="fade-in-up d1 level-card text-center py-8">
+                        <div class="text-4xl mb-3">🏛️</div>
+                        <h3 class="text-white font-medium text-sm">Election Rallies</h3>
+                        <p class="text-neutral-600 text-xs mt-1">Primary use case</p>
+                    </div>
+                    <div class="fade-in-up d2 level-card text-center py-8">
+                        <div class="text-4xl mb-3">🗳️</div>
+                        <h3 class="text-white font-medium text-sm">Polling Booths</h3>
+                        <p class="text-neutral-600 text-xs mt-1">Queue management</p>
+                    </div>
+                    <div class="fade-in-up d3 level-card text-center py-8">
+                        <div class="text-4xl mb-3">🎉</div>
+                        <h3 class="text-white font-medium text-sm">Festivals</h3>
+                        <p class="text-neutral-600 text-xs mt-1">Open gatherings</p>
+                    </div>
+                    <div class="fade-in-up d4 level-card text-center py-8">
+                        <div class="text-4xl mb-3">🏟️</div>
+                        <h3 class="text-white font-medium text-sm">Public Events</h3>
+                        <p class="text-neutral-600 text-xs mt-1">Stadiums, parades</p>
+                    </div>
+                </div>
+                <div class="fade-in-up d5 say-box mx-auto text-left">
+                    "This extends beyond elections — it's a general crowd safety system."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 19: Innovation -->
+        <div class="slide" data-slide="18">
+            <div class="absolute inset-0 dot-bg opacity-20"></div>
+            <div class="relative z-10 px-6 max-w-4xl w-full">
+                <div class="text-center mb-10">
+                    <span class="fade-in-up tag bg-[#FF4F30]/10 text-[#FF4F30] border border-[#FF4F30]/20 mb-4 inline-block">Innovation</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-4xl font-medium tracking-tight text-white">
+                        What Makes This Different
+                    </h2>
+                </div>
+                <div class="space-y-4 mb-8">
+                    <div class="fade-in-up d1 flex items-start gap-4 p-5 rounded-xl border border-[#FF4F30]/10 bg-[#FF4F30]/[0.02]">
+                        <div class="text-2xl">🧮</div>
+                        <div>
+                            <h3 class="text-white font-medium mb-1">Real-Time Stress Scoring</h3>
+                            <p class="text-neutral-400 text-sm">First system to quantify crowd stress as a single 0–1 metric from multi-sensor data</p>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d2 flex items-start gap-4 p-5 rounded-xl border border-[#FF4F30]/10 bg-[#FF4F30]/[0.02]">
+                        <div class="text-2xl">🧠</div>
+                        <div>
+                            <h3 class="text-white font-medium mb-1">Adaptive OTA Intelligence</h3>
+                            <p class="text-neutral-400 text-sm">System learns and adjusts its own sensitivity based on context — no manual tuning</p>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d3 flex items-start gap-4 p-5 rounded-xl border border-[#FF4F30]/10 bg-[#FF4F30]/[0.02]">
+                        <div class="text-2xl">🔗</div>
+                        <div>
+                            <h3 class="text-white font-medium mb-1">Fault-Tolerant Mesh + LoRa</h3>
+                            <p class="text-neutral-400 text-sm">Dual-network architecture that survives node failures and internet outages</p>
+                        </div>
+                    </div>
+                    <div class="fade-in-up d4 flex items-start gap-4 p-5 rounded-xl border border-[#FF4F30]/10 bg-[#FF4F30]/[0.02]">
+                        <div class="text-2xl">🔮</div>
+                        <div>
+                            <h3 class="text-white font-medium mb-1">Predictive-Ready Architecture</h3>
+                            <p class="text-neutral-400 text-sm">Data pipeline designed for future ML integration — not just reactive monitoring</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 20: Impact -->
+        <div class="slide" data-slide="19">
+            <div class="relative z-10 px-6 max-w-4xl w-full">
+                <div class="text-center mb-12">
+                    <span class="fade-in-up tag bg-green-500/10 text-green-400 border border-green-500/20 mb-4 inline-block">Impact</span>
+                    <h2 class="fade-in-up d1 text-3xl md:text-5xl font-medium tracking-tight text-white">
+                        From Reaction<br>to <span class="text-green-400">Prevention</span>
+                    </h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="fade-in-up d2 text-center">
+                        <div class="text-4xl md:text-5xl font-light text-white mb-2 tracking-tight">Zero</div>
+                        <div class="text-green-400 text-sm font-medium mb-1">Stampedes</div>
+                        <p class="text-neutral-600 text-xs">Predictive alerts before crowd pressure builds</p>
+                    </div>
+                    <div class="fade-in-up d3 text-center">
+                        <div class="text-4xl md:text-5xl font-light text-white mb-2 tracking-tight">↓</div>
+                        <div class="text-green-400 text-sm font-medium mb-1">Heatstroke Deaths</div>
+                        <p class="text-neutral-600 text-xs">Early temperature-triggered resource deployment</p>
+                    </div>
+                    <div class="fade-in-up d4 text-center">
+                        <div class="text-4xl md:text-5xl font-light text-white mb-2 tracking-tight">100%</div>
+                        <div class="text-green-400 text-sm font-medium mb-1">Data-Driven</div>
+                        <p class="text-neutral-600 text-xs">Every decision backed by quantified evidence</p>
+                    </div>
+                </div>
+                <div class="fade-in-up d5 say-box mx-auto text-left">
+                    "We move from reaction to prevention."
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 21: Conclusion -->
+        <div class="slide" data-slide="20">
+            <div class="absolute inset-0 dot-bg opacity-20"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#FF4F30] opacity-[0.04] rounded-full blur-[150px]"></div>
+            <div class="relative z-10 px-6 max-w-3xl text-center">
+                <div class="fade-in-up mb-8">
+                    <div class="w-16 h-16 rounded-full bg-[#FF4F30]/10 border border-[#FF4F30]/20 flex items-center justify-center mx-auto mb-6">
+                        <i data-lucide="target" class="w-8 h-8 text-[#FF4F30]"></i>
+                    </div>
+                </div>
+                <h2 class="fade-in-up d1 text-3xl md:text-5xl font-medium tracking-tight text-white leading-tight mb-8">
+                    A self-adaptive, fault-tolerant crowd intelligence system for <span class="text-[#FF4F30]">safer elections</span>.
+                </h2>
+                <div class="fade-in-up d2 flex flex-wrap items-center justify-center gap-3 mb-10">
+                    <span class="tag bg-[#FF4F30]/10 text-[#FF4F30] border border-[#FF4F30]/20">Adaptive OTA</span>
+                    <span class="tag bg-blue-500/10 text-blue-400 border border-blue-500/20">LoRa + Mesh</span>
+                    <span class="tag bg-green-500/10 text-green-400 border border-green-500/20">Level-Based Action</span>
+                </div>
+                <div class="fade-in-up d3 p-6 rounded-xl border border-white/5 bg-white/[0.02]">
+                    <p class="text-neutral-500 text-xs mb-3 mono uppercase tracking-widest">Presentation Tip</p>
+                    <div class="text-left space-y-2 text-sm text-neutral-400">
+                        <div class="flex items-start gap-2">
+                            <div class="w-1 h-1 rounded-full bg-[#FF4F30] mt-2 shrink-0"></div>
+                            <span>Don't read slides — speak like you built it</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <div class="w-1 h-1 rounded-full bg-[#FF4F30] mt-2 shrink-0"></div>
+                            <span>Emphasize: Adaptability, Reliability, Actionability</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <div class="w-1 h-1 rounded-full bg-[#FF4F30] mt-2 shrink-0"></div>
+                            <span>This is predictive infrastructure — not just monitoring</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Navigation -->
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3">
+        <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </button>
+        <div class="flex items-center gap-1.5 px-3" id="indicators"></div>
+        <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">
+            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </button>
+    </div>
+
+    <!-- Slide Counter -->
+    <div class="fixed bottom-6 right-6 z-50 slide-counter">
+        <span id="currentNum">01</span> / <span id="totalNum">21</span>
+    </div>
+
+    <!-- Keyboard hint -->
+    <div class="fixed top-6 right-6 z-50 flex items-center gap-2 text-neutral-700 text-xs mono">
+        <span class="px-1.5 py-0.5 rounded border border-white/5 bg-white/[0.02]">←</span>
+        <span class="px-1.5 py-0.5 rounded border border-white/5 bg-white/[0.02]">→</span>
+    </div>
+
+    <script>
+        // Initialize Lucide
+        lucide.createIcons();
+
+        const totalSlides = 21;
+        let currentSlide = 0;
+        let isTransitioning = false;
+
+        // Build indicators
+        const indicatorsContainer = document.getElementById('indicators');
+        for (let i = 0; i < totalSlides; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'mini-indicator' + (i === 0 ? ' active' : '');
+            dot.onclick = () => goToSlide(i);
+            indicatorsContainer.appendChild(dot);
+        }
+
+        // Build heatmap
+        const heatmap = document.getElementById('heatmap');
+        const heatValues = [
+            0.2, 0.3, 0.5, 0.7, 0.8, 0.6, 0.4, 0.2,
+            0.1, 0.2, 0.4, 0.6, 0.9, 0.7, 0.5, 0.3,
+            0.1, 0.1, 0.3, 0.5, 0.7, 0.8, 0.5, 0.2,
+            0.0, 0.1, 0.2, 0.3, 0.5, 0.6, 0.4, 0.1,
+        ];
+        heatValues.forEach(v => {
+            const cell = document.createElement('div');
+            cell.className = 'heatmap-cell';
+            const r = Math.round(v * 239);
+            const g = Math.round((1 - v) * 100 + 30);
+            cell.style.background = `rgba(${r}, ${g}, 0, ${0.3 + v * 0.7})`;
+            heatmap.appendChild(cell);
+        });
+
+        function goToSlide(index) {
+            if (isTransitioning || index === currentSlide || index < 0 || index >= totalSlides) return;
+            isTransitioning = true;
+
+            const slides = document.querySelectorAll('.slide');
+            const direction = index > currentSlide ? 1 : -1;
+
+            // Exit current
+            slides[currentSlide].classList.remove('active');
+            slides[currentSlide].classList.add(direction > 0 ? 'exit-left' : '');
+            slides[currentSlide].style.transform = direction > 0 ? 'translateX(-60px)' : 'translateX(60px)';
+            slides[currentSlide].style.opacity = '0';
+
+            // Prepare next
+            slides[index].style.transform = direction > 0 ? 'translateX(60px)' : 'translateX(-60px)';
+            slides[index].style.opacity = '0';
+
+            setTimeout(() => {
+                slides[currentSlide].classList.remove('exit-left');
+                slides[currentSlide].style.transform = '';
+                slides[currentSlide].style.opacity = '';
+                
+                currentSlide = index;
+                slides[currentSlide].classList.add('active');
+                
+                updateUI();
+                isTransitioning = false;
+            }, 50);
+        }
+
+        function changeSlide(dir) {
+            goToSlide(currentSlide + dir);
+        }
+
+        function updateUI() {
+            // Progress bar
+            document.getElementById('progressBar').style.width = ((currentSlide / (totalSlides - 1)) * 100) + '%';
+            
+            // Counter
+            document.getElementById('currentNum').textContent = String(currentSlide + 1).padStart(2, '0');
+            
+            // Indicators
+            document.querySelectorAll('.mini-indicator').forEach((dot, i) => {
+                dot.className = 'mini-indicator' + (i === currentSlide ? ' active' : '');
+            });
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+                e.preventDefault();
+                changeSlide(1);
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                changeSlide(-1);
+            }
+        });
+
+        // Touch/swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+        document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, false);
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+                changeSlide(diff > 0 ? 1 : -1);
+            }
+        }, false);
+
+        // Live score animation (for slide 15)
+        let scoreInterval;
+        function animateScore() {
+            const scoreEl = document.getElementById('liveScore');
+            let score = 0.42;
+            
+            function update() {
+                score += (Math.random() - 0.48) * 0.05;
+                score = Math.max(0, Math.min(1, score));
+                scoreEl.textContent = score.toFixed(2);
+                
+                if (score < 0.3) scoreEl.style.color = '#22c55e';
+                else if (score < 0.6) scoreEl.style.color = '#eab308';
+                else if (score < 0.8) scoreEl.style.color = '#f97316';
+                else scoreEl.style.color = '#ef4444';
+            }
+            
+            scoreInterval = setInterval(update, 1500);
+        }
+        animateScore();
+
+        // Initial state
+        updateUI();
+    </script>
+</body>
+</html>
