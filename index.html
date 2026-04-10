@@ -1,185 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Stress Score Monitor</title>
-
-<link rel="stylesheet" href="style.css">
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+  <meta charset="UTF-8">
+  <title>Election Stress Dashboard</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<!-- SLIDE 1 -->
-<div class="slide active">
-<h1>Stress Score Monitor</h1>
-<p>Real-time Crowd Risk Monitoring During Election Campaigns and Electoral Booths</p>
-<p><i>Prevent disasters before they happen</i></p>
+<div class="container">
+  <h1>Election Stress Monitor</h1>
+
+  <!-- SCORE DISPLAY -->
+  <div class="score-card">
+    <h2>Stress Score</h2>
+    <div id="scoreValue">0.00</div>
+    <div id="status">NORMAL</div>
+  </div>
+
+  <!-- INPUT SLIDERS -->
+  <div class="inputs">
+    <label>Air Quality <input type="range" min="0" max="1" step="0.01" id="aq"></label>
+    <label>Temperature <input type="range" min="0" max="1" step="0.01" id="temp"></label>
+    <label>Humidity <input type="range" min="0" max="1" step="0.01" id="humidity"></label>
+    <label>Sound Level <input type="range" min="0" max="1" step="0.01" id="sound"></label>
+    <label>Consensus <input type="range" min="0" max="1" step="0.01" id="consensus"></label>
+  </div>
+
+  <!-- RESOURCE PANEL -->
+  <div class="resources">
+    <h2>Recommended Action</h2>
+    <p id="actionText">All good. No action needed.</p>
+  </div>
 </div>
 
-<!-- SLIDE 2 -->
-<div class="slide">
-<h2>Problem</h2>
-<ul>
-<li>High crowd density</li>
-<li>Extreme heat + humidity</li>
-<li>Stampedes & panic</li>
-<li>No predictive system</li>
-</ul>
-</div>
-
-<!-- SLIDE 3 -->
-<div class="slide">
-<h2>Why It Matters</h2>
-<ul>
-<li>1000+ heat-related deaths yearly</li>
-<li>Crowd disasters are preventable</li>
-<li>Delayed response = fatalities</li>
-</ul>
-</div>
-
-<!-- SLIDE 4 -->
-<div class="slide">
-<h2>Solution</h2>
-<ul>
-<li>Multi-sensor system</li>
-<li>Stress score (0–1)</li>
-<li>Action-based alerts</li>
-</ul>
-</div>
-
-<!-- SLIDE 5 -->
-<div class="slide">
-<h2>Formula</h2>
-<p>S = w1·Air + w2·Temp + w3·Humidity + w4·Sound + w5·Consensus</p>
-</div>
-
-<!-- SLIDE 6 -->
-<div class="slide">
-<h2>Architecture</h2>
-<ul>
-<li>ESP32 nodes</li>
-<li>ESP-NOW mesh (primary)</li>
-<li>LoRa fallback (fail-safe)</li>
-<li>OTA weight updates</li>
-</ul>
-</div>
-
-<!-- SLIDE 7 -->
-<div class="slide">
-<h2>Graph: Stress Over Time</h2>
-<canvas id="chart1"></canvas>
-</div>
-
-<!-- SLIDE 8 -->
-<div class="slide">
-<h2>Graph: Parameter Contribution</h2>
-<canvas id="chart2"></canvas>
-</div>
-
-<!-- SLIDE 9 -->
-<div class="slide">
-<h2>Live Simulation</h2>
-
-<div class="meter">
-<div id="fill" class="fill"></div>
-</div>
-
-<p>Stress: <span id="value">0.00</span></p>
-
-<div id="alert" class="alert">🚨 CRITICAL ALERT</div>
-</div>
-
-<!-- SLIDE 10 -->
-<div class="slide">
-<h2>Impact</h2>
-<ul>
-<li>Prevents stampedes</li>
-<li>Reduces deaths</li>
-<li>Real-time decisions</li>
-</ul>
-</div>
-
-<!-- SLIDE 11 -->
-<div class="slide">
-<h1>Thank You</h1>
-</div>
-
-<!-- NAV -->
-<div class="nav">
-<button onclick="prevSlide()">⬅</button>
-<button onclick="nextSlide()">➡</button>
-</div>
-
-<script>
-
-/* SLIDES */
-let index = 0;
-const slides = document.querySelectorAll(".slide");
-
-function showSlide(i){
-slides[index].classList.remove("active");
-index = (i + slides.length) % slides.length;
-slides[index].classList.add("active");
-}
-
-function nextSlide(){ showSlide(index+1); }
-function prevSlide(){ showSlide(index-1); }
-
-/* KEYS */
-document.addEventListener("keydown", e=>{
-if(e.key==="ArrowRight") nextSlide();
-if(e.key==="ArrowLeft") prevSlide();
-});
-
-/* GRAPH 1 */
-new Chart(document.getElementById("chart1"),{
-type:"line",
-data:{
-labels:["1","2","3","4","5","6"],
-datasets:[{
-label:"Stress",
-data:[0.2,0.4,0.5,0.8,0.9,0.6],
-borderColor:"red"
-}]
-}
-});
-
-/* GRAPH 2 */
-new Chart(document.getElementById("chart2"),{
-type:"bar",
-data:{
-labels:["Air","Temp","Humidity","Sound","Consensus"],
-datasets:[{
-label:"Weights",
-data:[0.2,0.3,0.1,0.25,0.15],
-backgroundColor:"orange"
-}]
-}
-});
-
-/* SIMULATION */
-let s = 0;
-
-setInterval(()=>{
-s += Math.random()*0.2;
-if(s>1) s=0;
-
-document.getElementById("fill").style.width = (s*100)+"%";
-document.getElementById("value").innerText = s.toFixed(2);
-
-if(s>0.85){
-let a = document.getElementById("alert");
-a.style.display="block";
-setTimeout(()=>a.style.display="none",1000);
-}
-
-},1500);
-
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
