@@ -1,84 +1,45 @@
-body{
-margin:0;
-font-family:Arial;
-background:#0a0a0a;
-color:white;
-overflow:hidden;
+body {
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+  text-align: center;
 }
 
-.slide{
-display:none;
-height:100vh;
-width:100vw;
-padding:60px;
-text-align:center;
-box-sizing:border-box;
+.container {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
 }
 
-.active{
-display:block;
+.score-card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 20px;
 }
 
-h1{
-font-size:60px;
+#scoreValue {
+  font-size: 60px;
+  font-weight: bold;
 }
 
-h2{
-font-size:40px;
+#status {
+  font-size: 20px;
+  margin-top: 10px;
 }
 
-p,li{
-font-size:20px;
+.inputs {
+  display: grid;
+  gap: 15px;
+  margin: 20px 0;
 }
 
-ul{
-max-width:600px;
-margin:auto;
-text-align:left;
+input[type="range"] {
+  width: 100%;
 }
 
-.nav{
-position:fixed;
-bottom:20px;
-right:20px;
-}
-
-button{
-padding:10px;
-margin:5px;
-cursor:pointer;
-}
-
-/* GRAPHS */
-canvas{
-max-width:600px;
-margin-top:20px;
-}
-
-/* METER */
-.meter{
-width:400px;
-height:25px;
-background:#444;
-margin:auto;
-border-radius:20px;
-overflow:hidden;
-}
-
-.fill{
-height:100%;
-width:0%;
-background:red;
-}
-
-/* ALERT */
-.alert{
-display:none;
-position:fixed;
-top:20px;
-left:50%;
-transform:translateX(-50%);
-background:red;
-padding:10px 20px;
-font-weight:bold;
+.resources {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 15px;
 }
