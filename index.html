@@ -15,271 +15,101 @@
 
     <div class="card">
         <p><i>
-        "Elections are high-risk environments. Our system predicts and prevents
-        crowd disasters before they happen."
+        "Predicting and preventing crowd disasters before they happen."
         </i></p>
     </div>
 
-    <p style="margin-top:40px; opacity:0.6;">Press → to begin</p>
+    <small>Press → or click</small>
 </div>
 
 <!-- SLIDE 2 -->
 <div class="slide">
-    <h2>Why This Problem Matters</h2>
+<h2>Why This Matters</h2>
 
-    <div class="card">
-        <ul>
-            <li>🔥 1000+ heat-related deaths annually</li>
-            <li>👥 Crowd density increases stampede risk exponentially</li>
-            <li>⚠️ Most disasters happen due to lack of early detection</li>
-            <li>📉 Current systems are reactive, not predictive</li>
-        </ul>
+<div class="stats">
+    <div>
+        <div id="stat1" class="stat">0</div>
+        <p>Heat deaths/year</p>
     </div>
 
-    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Kumbh_Mela_crowd.jpg">
+    <div>
+        <div id="stat2" class="stat">0</div>
+        <p>% crowd risk increase</p>
+    </div>
+
+    <div>
+        <div id="stat3" class="stat">0</div>
+        <p>% preventable</p>
+    </div>
+</div>
 </div>
 
 <!-- SLIDE 3 -->
 <div class="slide">
-    <h2>Problem Statement</h2>
-
-    <div class="card">
-        <ul>
-            <li>High-density crowds during elections</li>
-            <li>Extreme heat + humidity</li>
-            <li>Leads to stampedes, panic, heat strokes</li>
-            <li>CCTV → reactive, expensive</li>
-        </ul>
-    </div>
+<h2>Problem</h2>
+<div class="card">
+<ul>
+<li>High crowd density</li>
+<li>Extreme heat + humidity</li>
+<li>Stampedes & panic</li>
+<li>No predictive system</li>
+</ul>
+</div>
 </div>
 
 <!-- SLIDE 4 -->
 <div class="slide">
-    <h2>Gap in Existing Systems</h2>
-
-    <div class="card">
-        <ul>
-            <li>No quantifiable stress metric</li>
-            <li>No predictive intelligence</li>
-            <li>No prioritized response system</li>
-        </ul>
-    </div>
+<h2>Solution</h2>
+<div class="card">
+<ul>
+<li>Multi-sensor system</li>
+<li>Stress score (0–1)</li>
+<li>Level-based actions</li>
+</ul>
+</div>
 </div>
 
 <!-- SLIDE 5 -->
 <div class="slide">
-    <h2>Our Solution</h2>
-
-    <div class="card">
-        <ul>
-            <li>Multi-sensor system</li>
-            <li>Real-time stress score (0–1)</li>
-            <li>Level-based intervention system</li>
-        </ul>
-    </div>
+<h2>System Architecture</h2>
+<div class="card">
+<ul>
+<li>ESP32 nodes</li>
+<li>ESP-NOW mesh (primary)</li>
+<li>LoRa fallback (fail-safe)</li>
+<li>OTA adaptive weights</li>
+</ul>
+</div>
 </div>
 
 <!-- SLIDE 6 -->
 <div class="slide">
-    <h2>Stress Score Model</h2>
+<h2>Live Stress Simulation</h2>
 
-    <div class="card">
-        <p>S = w₁·Air + w₂·Temp + w₃·Humidity + w₄·Sound + w₅·Consensus</p>
-        <ul>
-            <li>Normalized inputs</li>
-            <li>Weighted importance</li>
-            <li>Clamped between 0 and 1</li>
-        </ul>
-    </div>
+<div class="meter">
+    <div id="meterFill" class="meter-fill"></div>
+</div>
+
+<p>Stress Score: <span id="meterValue">0.00</span></p>
+
+<div id="alertBox" class="alert">🚨 CRITICAL STRESS</div>
 </div>
 
 <!-- SLIDE 7 -->
 <div class="slide">
-    <h2>Weight Logic</h2>
-
-    <div class="card">
-        <ul>
-            <li>Sound → fastest crowd stress signal</li>
-            <li>Temperature → heat danger</li>
-            <li>Humidity → amplifies stress</li>
-            <li>Air quality → long-term health impact</li>
-            <li>Consensus → reduces false alarms</li>
-        </ul>
-    </div>
+<h2>Impact</h2>
+<div class="card">
+<ul>
+<li>Prevents stampedes</li>
+<li>Reduces heatstroke deaths</li>
+<li>Enables real-time decisions</li>
+</ul>
+</div>
 </div>
 
 <!-- SLIDE 8 -->
 <div class="slide">
-    <h2>Signal Processing</h2>
-
-    <div class="card">
-        <ul>
-            <li>Sensor data is noisy</li>
-            <li>Use Exponential Moving Average (EMA)</li>
-            <li>Removes sudden spikes</li>
-        </ul>
-    </div>
-</div>
-
-<!-- SLIDE 9 -->
-<div class="slide">
-    <h2>Stress Levels & Actions</h2>
-
-    <div class="card">
-        <ul>
-            <li>🟢 0–0.4 → Normal</li>
-            <li>🟡 0.4–0.65 → Monitor</li>
-            <li>🟠 0.65–0.85 → Deploy resources</li>
-            <li>🔴 0.85–1 → Emergency</li>
-        </ul>
-    </div>
-</div>
-
-<!-- SLIDE 10 -->
-<div class="slide">
-    <h2>Hardware Prototype</h2>
-
-    <div class="card">
-        <ul>
-            <li>ESP32 microcontroller</li>
-            <li>Temperature & humidity sensors</li>
-            <li>Microphone (sound levels)</li>
-            <li>Air quality sensor</li>
-        </ul>
-    </div>
-</div>
-
-<!-- SLIDE 11 -->
-<div class="slide">
-    <h2>System Architecture</h2>
-
-    <div class="card">
-        <ul>
-            <li><b>Edge:</b> Sensors + ESP32 + local compute</li>
-            <li><b>Primary:</b> ESP-NOW mesh (fast)</li>
-            <li><b>Fail-safe:</b> LoRa backup</li>
-            <li><b>Cloud:</b> Dashboard + OTA updates</li>
-        </ul>
-    </div>
-
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/IoT_Layers.png">
-</div>
-
-<!-- SLIDE 12 -->
-<div class="slide">
-    <h2>Mesh Networking (ESP-NOW)</h2>
-
-    <div class="card">
-        <ul>
-            <li>Node-to-node communication</li>
-            <li>No single point of failure</li>
-            <li>Consensus improves accuracy</li>
-        </ul>
-    </div>
-</div>
-
-<!-- SLIDE 13 -->
-<div class="slide">
-    <h2>LoRa Fail-Safe</h2>
-
-    <div class="card">
-        <ul>
-            <li>ESP-NOW handles normal communication</li>
-            <li>If mesh fails → LoRa activates</li>
-            <li>Only sends critical alerts</li>
-        </ul>
-    </div>
-
-    <p class="highlight">System remains operational during failure</p>
-
-    <img src="https://upload.wikimedia.org/wikipedia/commons/7/7d/LoRa_Network_Architecture.png">
-</div>
-
-<!-- SLIDE 14 -->
-<div class="slide">
-    <h2>Adaptive Intelligence (OTA)</h2>
-
-    <div class="card">
-        <ul>
-            <li>Weights updated dynamically</li>
-            <li>Adjusts to environment</li>
-            <li>Heatwave → temp weight ↑</li>
-            <li>Indoor → sound weight ↑</li>
-        </ul>
-    </div>
-</div>
-
-<!-- SLIDE 15 -->
-<div class="slide">
-    <h2>System Flow</h2>
-
-    <div class="card">
-        <p>
-        Sensors → Stress Score → Mesh → EMA → Threshold → Action → LoRa → Dashboard → OTA
-        </p>
-    </div>
-
-    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/Flowchart_example.svg">
-</div>
-
-<!-- SLIDE 16 -->
-<div class="slide">
-    <h2>Dashboard</h2>
-
-    <div class="card">
-        <ul>
-            <li>Live stress visualization</li>
-            <li>Heatmaps</li>
-            <li>Transparency for authorities</li>
-        </ul>
-    </div>
-</div>
-
-<!-- SLIDE 17 -->
-<div class="slide">
-    <h2>Failure Handling</h2>
-
-    <div class="card">
-        <ul>
-            <li>Internet down → LoRa works</li>
-            <li>Node failure → mesh reroutes</li>
-            <li>Noise spikes → EMA smooths</li>
-            <li>Calibration errors → OTA fixes</li>
-        </ul>
-    </div>
-</div>
-
-<!-- SLIDE 18 -->
-<div class="slide">
-    <h2>Use Cases</h2>
-
-    <div class="card">
-        <ul>
-            <li>Election rallies</li>
-            <li>Polling booths</li>
-            <li>Festivals</li>
-            <li>Public gatherings</li>
-        </ul>
-    </div>
-</div>
-
-<!-- SLIDE 19 -->
-<div class="slide">
-    <h2>Impact</h2>
-
-    <div class="card">
-        <ul>
-            <li>Prevents stampedes</li>
-            <li>Reduces heatstroke deaths</li>
-            <li>Enables data-driven governance</li>
-        </ul>
-    </div>
-</div>
-
-<!-- SLIDE 20 -->
-<div class="slide">
-    <h1>Thank You</h1>
-    <p>Self-adaptive, fault-tolerant crowd intelligence system</p>
+<h1>Thank You</h1>
 </div>
 
 <!-- NAV -->
@@ -292,19 +122,75 @@
 let current = 0;
 const slides = document.querySelectorAll(".slide");
 
+/* SLIDES */
 function showSlide(index) {
     slides[current].classList.remove("active");
     current = (index + slides.length) % slides.length;
     slides[current].classList.add("active");
+
+    if (slides[current].querySelector(".stat")) startStats();
 }
 
 function nextSlide() { showSlide(current + 1); }
 function prevSlide() { showSlide(current - 1); }
 
-document.addEventListener("keydown", (e) => {
+/* NAVIGATION */
+window.addEventListener("keydown", (e) => {
     if (e.key === "ArrowRight" || e.key === " ") nextSlide();
     if (e.key === "ArrowLeft") prevSlide();
 });
+
+window.addEventListener("click", nextSlide);
+
+/* STATS */
+function animate(id, target) {
+    let count = 0;
+    const el = document.getElementById(id);
+    const step = target / 100;
+
+    const interval = setInterval(() => {
+        count += step;
+        if (count >= target) {
+            count = target;
+            clearInterval(interval);
+        }
+        el.innerText = Math.floor(count);
+    }, 20);
+}
+
+function startStats() {
+    animate("stat1", 1000);
+    animate("stat2", 80);
+    animate("stat3", 70);
+}
+
+/* STRESS METER */
+let stress = 0;
+
+function updateMeter() {
+    const fill = document.getElementById("meterFill");
+    const val = document.getElementById("meterValue");
+
+    stress += Math.random() * 0.2;
+    if (stress > 1) stress = 0;
+
+    fill.style.width = (stress * 100) + "%";
+    val.innerText = stress.toFixed(2);
+
+    if (stress > 0.85) triggerAlert();
+}
+
+setInterval(updateMeter, 1500);
+
+/* ALERT */
+function triggerAlert() {
+    const box = document.getElementById("alertBox");
+    box.style.display = "block";
+
+    setTimeout(() => {
+        box.style.display = "none";
+    }, 1200);
+}
 </script>
 
 </body>
